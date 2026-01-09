@@ -189,7 +189,7 @@ for (i in c(1,2,15,21)) {
             col = "skyblue", 
             border = "white")
 
-
+}
 ##filter_out unemployment series from combined_data. Keep standardized unemployment
 combined_data_prepared_for_model_fitting <- combined_data %>% dplyr::select(state_name,date,demeaned_standardized_unem)
 
@@ -215,7 +215,7 @@ combined_data_model_fitting_by_state_name<- combined_data_model_fitting_by_state
     resids = purrr::map(arima_model,residuals))
   
 
-###unlis the residuals of each state into a long format and store in tibble
+###unlist the residuals of each state into a long format and store in tibble
 
 resids <- combined_data_model_fitting_by_state_name %>%
    dplyr::select(state_name, resids) %>%
@@ -264,8 +264,7 @@ for (i in c(1,2,15,21)) {
 }
 
   
-#Plot the histograms of the states
-for (i in c(1,2,15,21)) {
+#Plot the histograms the residuals of the same states
   state <- states[i]
   resids_hist <- resids %>% dplyr::filter(state_name == state) %>% dplyr::pull(standardized_resids)
 
