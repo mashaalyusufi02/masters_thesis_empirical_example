@@ -163,33 +163,6 @@ print(state_unem_summary)
 
 
 
-#par(mfrow = c(5, 5), mar = c(2, 2, 2, 1)) 
-#par(bg = "white")
-## Plot the histograms of the states
-#Plot the histograms of the states
-#for (i in 1:25) {
-#  state <- states[i]
-#  hist <- combined_data %>% dplyr::filter(state_name == state) %>% dplyr::pull(demeaned_standardized_unem)
-
-#  mean_val <- mean(hist, na.rm = TRUE)
-#  sd_val <- sd(hist, na.rm = TRUE)
-  
-#  hist(hist,
-#       prob = TRUE,
-#       breaks = 20, 
-#       main = state,
-#       xlim = c(-3,3),
-#       xlab = "unemployment rate", ylab = "Density",
-#       col = "skyblue", border = "white")
-  
-#  abline(v = mean_val, col = "red", lwd = 2, lty = 2)
-#  abline(v = mean_val + sd_val, col = "red", lwd = 2, lty = 3)
-#  abline(v = mean_val - sd_val, col = "red", lwd = 2, lty = 3)
-  
-#}
-
-par(mfrow = c(2, 2), mar = c(4,4, 4, 6))  # add extra right margin
-par(bg = "white")
 
 
 ##print histograms of unemployment rates for the state of Alabama, Alaska, Iowa, and Massachusetts
@@ -215,20 +188,6 @@ for (i in c(1,2,15,21)) {
             ylab = "Density",
             col = "skyblue", 
             border = "white")
-  
-  # get limits
-#  x_max <- max(h$breaks)
-#  y_max <- max(h$density)
-  
-  # add legend slightly outside top-right of the plot
-#  legend(x = x_max * 0.8,   # push to the right
-#         y = y_max * 0.9, 
-#         box.col = "brown", bg = "white", box.lwd = 2, 
-#         title = "Moments", 
-#         legend = c(paste("Skew =", round(skew_val, 3)),
-#                    paste("Kurt =", round(kurt_val, 3))))
-}
-
 
 
 ##filter_out unemployment series from combined_data. Keep standardized unemployment
@@ -244,44 +203,32 @@ fit_best_arima <- function(df) {
   auto.arima(ts_data)
 }
 
-#combined_data_by_state_index <- combined_data_prepared_for_model_fitting %>%
-#  group_by(state_index, series_id) %>%
-#  nest() %>%
-#  ungroup()
-
+##fit the ARIMA model
 combined_data_model_fitting_by_state_name <- combined_data_by_state_name %>%
   mutate(
     arima_model = purrr::map(.x = data, .f = ~fit_best_arima(.x)),
   )
 
+##extract the residuals from the ARIMA model
 combined_data_model_fitting_by_state_name<- combined_data_model_fitting_by_state_name %>%
   mutate(
     resids = purrr::map(arima_model,residuals))
   
 
-
-
-#try to put back the state names into 
-#state_names_df <- tibble(
-#  state_index = 1:length(states),
-#  state_name = states
-#)
-
-#combined_data_model_fitting_by_state_index <- combined_data_model_fitting_by_state_index %>%
-#  left_join(state_names_df, by = "state_index")
-
+###unlis the residuals of each state into a long format and store in tibble
 
 resids <- combined_data_model_fitting_by_state_name %>%
    dplyr::select(state_name, resids) %>%
   unnest(resids)
 
-#resids <- resids[,-1]
 
+##create standardized residuals with mean=0 and variance=1
 resids <- resids %>%  group_by(state_name) %>%
   mutate(
   standardized_resids = (resids - mean(resids))/sd(resids)) %>% ungroup()
-####double check if standardized_resids have mean=0 and variance = 1
 
+
+##store and present the summary statistics of the ARIMA residuals 
 resids_state_unem_summary <- resids %>%
   group_by(state_name) %>%
   summarise(
@@ -292,14 +239,12 @@ resids_state_unem_summary <- resids %>%
 print(resids_state_unem_summary)
 
 
-
+## Plot the histograms of 4 states
 
 
 par(mfrow = c(2, 2), mar = c(4, 4, 4, 6)) 
 par(bg = "white")
-## Plot the histograms of the states
-#Plot the histograms of the states
-#for (i in 1:25) {
+
 for (i in c(1,2,15,21)) {
 
   state <- states[i]
@@ -316,9 +261,6 @@ for (i in c(1,2,15,21)) {
        xlab = "ARIMA Residuals", ylab = "Density",
        col = "skyblue", border = "white")
   
-  #abline(v = mean_val, col = "red", lwd = 2, lty = 2)
-  #abline(v = mean_val + sd_val, col = "red", lwd = 2, lty = 3)
-  #abline(v = mean_val - sd_val, col = "red", lwd = 2, lty = 3)
 }
 
   
